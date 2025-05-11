@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Crypto Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Crypto Dashboard</h1>
+        <form method="POST">
+            <label for="coin">Crypto Coin:</label>
+            <select name="coin">
+                {% for key, name in coins.items() %}
+                <option value="{{ key }}" {% if key==selected_coin %}selected{% endif %}>{{ name }}</option>
+                {% endfor %}
+            </select>
+
+            <label for="days">Time Range:</label>
+            <select name="days">
+                {% for d in ["1", "7", "30", "90"] %}
+                <option value="{{ d }}" {% if d==days %}selected{% endif %}>Last {{ d }} days</option>
+                {% endfor %}
+            </select>
+
+            <button type="submit">Show Chart</button>
+        </form>
+
+        <h2>Current Prices (USD)</h2>
+        <ul>
+            {% for key, value in prices.items() %}
+            <li><strong>{{ coins[key] }}:</strong> ${{ value.usd }}</li>
+            {% endfor %}
+        </ul>
+
+        <h2>{{ coins[selected_coin] }} - Last {{ days }} Days</h2>
+        <canvas id="priceChart" width="400" height="200"></canvas>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('priceChart').getContext('2d');
+        const labels = {{ chart_data| map(attribute = 0) | list | tojson }};
+        const prices = {{ chart_data| map(attribute = 1) | list | tojson }};
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels.map(ts => new Date(ts).toLocaleDateString()),
+                datasets: [{
+                    label: '{{ coins[selected_coin] }} Price (Last {{ days }} Days)',
+                    data: prices,
+                    fill: false,
+                    borderColor: 'rgb(75, 192, 192)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: false
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
